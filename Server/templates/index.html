@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+        body, html{width: 100%;height: 100%;margin:0;font-family:"微软雅黑";}
+        #map{
+                text-align:center;
+                height:60%; width:100%;
+                border:6px solid #73AD21;
+                padding:6px;
+        }
+
+        #d1 {
+            margin-left:20px;
+        }
+
+        #d2 {
+            text-align:center;
+        }
+
+
+        #start {
+            width: 30%;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 20px;
+            padding: 8px 0px;
+            margin: 16px 0;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+         #stop {
+            width: 30%;
+            background-color: #c3272b;
+            color: white;
+            font-size: 20px;
+            padding: 8px 0px;
+            margin: 16px 0;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+    </style>
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=IFUhqXKucNAxz6fVAhOrCu0u8n7rfDm9"></script>
+    <script src="http://apps.bdimg.com/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/gcoord/dist/gcoord.js"></script>
+    <title>尼给路打哟</title>
+    <!--script type="text/javascript" src="https://cdn.staticfile.org/jquery/1.9.1/jquery.min.js"></script-->
+</head>
+<body>
+    <div id="d1">
+        <p id="data">
+            {{position}}
+        </p>
+        <div id="d2">
+            <input type="button" onclick="send_start()" value="启动" id="start" ;/>
+
+            <input type="button" onclick="send_stop()" value="停止" id="stop" ;/>
+
+            <input type="hidden" onclick="closed()" value="断开连接" ;/>
+
+            <input type="hidden" onclick="get_data()" value="刷新" ;/>
+            <br/><br/>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+
+        <script>
+            $("#stop").hide()
+            $("#start").show()
+            function connect(){
+                ws = new WebSocket('ws://127.0.0.1:8848/WebSocket/');
+                ws.onopen = function(){
+                    console.log('建立连接');
+                    //alert('"已建立连接"');
+                }
+
+                ws.onmessage = function(evt){
+                    console.log('收到：'+evt.data);
+                    document.getElementById("data").innerHTML=evt.data;
+                }
+
+                ws.onclose = function(){
+                    console.log('关闭连接ing');
+                }
+            }
+
+            function send_start(){
+                ws.send('开始');
+                //alert('已发送”开始“');
+                $("#start").hide();
+                $("#stop").show();
+            }
+
+            function send_stop(){
+                ws.send('结束');
+                //alert('已发送”结束“');
+                $("#stop").hide();
+                $("#start").show();
+            }
+
+            function closed(){
+                ws.close();
+                alert('"已关闭连接"');
+            }
+
+            function get_data(){
+                ws.send('101010');
+            }
+
+
+            connect();
+            setInterval('get_data()',1000);
+
+        </script>
+        <script type="text/javascript">
+
+            v = 116.363019;
+            h = 39.966049;
+            v_before = v;
+            h_before = h;
+            function change_map(map,point){
+                x = document.getElementById("data").innerHTML;
+                if(x!=0){
+                    y = x.split(" ");
+                    v_before = v;
+                    h_before = h;
+                    v = parseFloat(y[2]);
+                    h = parseFloat(y[5]);
+                }
+                if(v!=v_before && h!=h_before){
+                    var point = new BMap.Point(v, h);
+                    map.panTo(point);
+                    var marker = new BMap.Marker(point);
+                    map.addOverlay(marker);
+                }
+            }
+
+
+            // 百度地图API功能
+            var map = new BMap.Map("map");
+            var point = new BMap.Point(v, h);
+            map.centerAndZoom(point,18);
+            //var marker = new BMap.Marker(point);
+            //map.addOverlay(marker);
+            setInterval('change_map(map,point)',1000)
+
+            map.enableScrollWheelZoom(true);
+            map.addControl(new BMap.NavigationControl());// 添加平移缩放控件
+            map.addControl(new BMap.ScaleControl()); // 添加比例尺控件
+            map.addControl(new BMap.OverviewMapControl()); //添加缩略地图控件
+
+
+        </script>
+</body>
+</html>
